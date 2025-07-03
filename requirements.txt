@@ -1,0 +1,10 @@
+# Flask e extensões
+Flask
+Flask-SQLAlchemy
+
+# Comunicação com ESPHome e Home Assistant
+aioesphomeapi
+py-ha-ws-client
+
+# Utilitário para variáveis de ambiente
+python-dotenv
