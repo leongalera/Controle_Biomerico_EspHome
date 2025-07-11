@@ -1,6 +1,9 @@
 # Flask e extensões
 Flask
 Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+Flask-APScheduler
 
 # Comunicação com ESPHome e Home Assistant
 aioesphomeapi
@@ -8,3 +11,9 @@ py-ha-ws-client
 
 # Utilitário para variáveis de ambiente
 python-dotenv
+
+requests
+bcrypt
+wtforms-sqlalchemy
+pytz
+waitress

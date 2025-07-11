@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.prefix.label(class="form-label") }}
+                {{ form.prefix(class="form-control") }}
+                <div class="form-text">{{ form.prefix.description }}</div>
+            </div>
+            <div class="mb-3">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control", rows=3) }}
+            </div>
+            <div class="mb-3">
+                {{ form.esphome_hostname.label(class="form-label") }}
+                {{ form.esphome_hostname(class="form-control") }}
+                <div class="form-text">{{ form.esphome_hostname.description }}</div>
+            </div>
+            <div class="mb-3">
+                {{ form.esphome_api_key.label(class="form-label") }}
+                {{ form.esphome_api_key(class="form-control") }}
+                <div class="form-text">{{ form.esphome_api_key.description }}</div>
+            </div>
+
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('zone.list_zones') }}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

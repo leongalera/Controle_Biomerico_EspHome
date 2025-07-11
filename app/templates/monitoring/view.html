@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Monitoramento de Acessos{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Monitoramento de Acessos</h1>
+        <div>
+            <a href="{{ request.full_path }}" class="btn btn-info" role="button">
+                <i class="bi bi-arrow-clockwise"></i> Atualizar
+            </a>
+            <form action="{{ url_for('monitoring.clear_logs') }}" method="POST" class="d-inline" onsubmit="return confirm('ATENÇÃO! Esta ação é irreversível e apagará TODO o histórico de acessos. Deseja continuar?');">
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Limpar Histórico
+                </button>
+            </form>
+        </div>
+    </div>
+
+<div class="card mb-4">
+    <div class="card-header">Filtros</div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('monitoring.view_logs') }}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    {{ form.start_date.label(class="form-label") }}
+                    {{ form.start_date(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.end_date.label(class="form-label") }}
+                    {{ form.end_date(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.user.label(class="form-label") }}
+                    {{ form.user(class="form-select") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.zone.label(class="form-label") }}
+                    {{ form.zone(class="form-select") }}
+                </div>
+                <div class="col-md-12 mt-3">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('monitoring.view_logs') }}" class="btn btn-secondary">Limpar Filtros</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover table-sm">
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Zona</th>
+                    <th>Usuário</th>
+                    <th>Resultado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.timestamp.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                    <td>{{ log.zone_name }}</td>
+                    <td>
+                        {% if log.user %}
+                            {{ log.user.name }} (Dedo: {{ log.finger_used }})
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.result == 'Autorizado' %}
+                            <span class="badge bg-success">{{ log.result }}</span>
+                        {% elif log.result == 'Negado (Inativo)' %}
+                            <span class="badge bg-warning text-dark">{{ log.result }}</span>
+                        {% else %}
+                            <span class="badge bg-danger">{{ log.result }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center">Nenhum log encontrado para os filtros selecionados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<nav aria-label="Navegação das páginas de log" class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('monitoring.view_logs', page=pagination.prev_num, **request.args) }}">Anterior</a>
+        </li>
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('monitoring.view_logs', page=page_num, **request.args) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('monitoring.view_logs', page=pagination.next_num, **request.args) }}">Próxima</a>
+        </li>
+    </ul>
+</nav>
+{% endblock %}

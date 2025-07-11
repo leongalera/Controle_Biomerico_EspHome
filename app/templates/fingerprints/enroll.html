@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastrar Digital para {{ user.name }}{% endblock %}
+
+{% block content %}
+<h1>Cadastrar Digital para <span class="text-primary">{{ user.name }}</span></h1>
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-body">
+                <form id="enrollForm">
+                    <div class="mb-3">
+                        {{ form.zone.label(class="form-label") }}
+                        {{ form.zone(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.finger_id_on_sensor.label(class="form-label") }}
+                        {{ form.finger_id_on_sensor(class="form-control") }}
+                        <div class="form-text">{{ form.finger_id_on_sensor.description }}</div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.finger_name.label(class="form-label") }}
+                        {{ form.finger_name(class="form-select") }}
+                    </div>
+                    {{ form.submit(class="btn btn-success", id="submitBtn") }}
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <h4>Log do Processo de Cadastro</h4>
+        <pre id="statusLog" class="bg-dark text-white p-3 rounded" style="height: 300px; overflow-y: scroll; white-space: pre-wrap;"></pre>
+        <div id="finalMessage" class="d-none alert"></div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('enrollForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const log = document.getElementById('statusLog');
+        const submitBtn = document.getElementById('submitBtn');
+        const finalMsg = document.getElementById('finalMessage');
+
+        // Limpa o log e desabilita o botão
+        log.textContent = 'Iniciando...\n';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Cadastrando...';
+        finalMsg.classList.add('d-none');
+
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData).toString();
+
+        // Conecta ao endpoint de streaming (Server-Sent Events)
+        const eventSource = new EventSource("{{ url_for('fingerprint.stream_enroll', user_id=user.id) }}?" + params);
+
+        eventSource.onmessage = function(event) {
+            const data = event.data;
+            log.textContent += data + '\n';
+            log.scrollTop = log.scrollHeight; // Auto-scroll
+
+            if (data.includes("ERRO") || data.includes("FALHA")) {
+                finalMsg.textContent = 'Ocorreu uma falha no cadastro. Verifique o log e tente novamente.';
+                finalMsg.className = 'alert alert-danger mt-3';
+                eventSource.close();
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Iniciar Cadastro';
+            } else if (data.includes("SUCESSO")) {
+                finalMsg.textContent = 'Digital cadastrada com sucesso! Você será redirecionado em 5 segundos.';
+                finalMsg.className = 'alert alert-success mt-3';
+                eventSource.close();
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('user.list_users') }}";
+                }, 5000);
+            }
+        };
+
+        eventSource.onerror = function() {
+            log.textContent += 'ERRO: A conexão com o servidor foi perdida.\n';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Iniciar Cadastro';
+            eventSource.close();
+        };
+    });
+</script>
+<script>
+    // Função assíncrona para buscar o próximo ID
+    async function updateNextFingerId() {
+        // Pega os elementos do formulário pelo ID
+        const zoneSelect = document.getElementById('zone');
+        const idInput = document.getElementById('finger_id_on_sensor');
+        const selectedZoneId = zoneSelect.value;
+
+        // Se nenhuma zona for selecionada, não faz nada
+        if (!selectedZoneId) {
+            idInput.value = '';
+            return;
+        }
+
+        try {
+            // Chama a nossa nova API
+            const response = await fetch(`/api/zone/${selectedZoneId}/next_finger_id`);
+            if (!response.ok) {
+                throw new Error('Falha ao buscar o ID da digital.');
+            }
+            const data = await response.json();
+
+            // Atualiza o valor do campo de ID com o resultado da API
+            idInput.value = data.next_id;
+        } catch (error) {
+            console.error('Erro:', error);
+            idInput.value = 'Erro!';
+        }
+    }
+
+    // Adiciona um "ouvinte" que dispara a função sempre que o usuário MUDA a zona selecionada
+    document.getElementById('zone').addEventListener('change', updateNextFingerId);
+
+    // Dispara a função uma vez assim que a página carrega, para já preencher o ID da primeira zona da lista
+    document.addEventListener('DOMContentLoaded', updateNextFingerId);
+</script>
+{% endblock %}

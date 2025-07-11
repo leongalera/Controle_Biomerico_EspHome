@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control") }}
+            </div>
+
+            <div class="form-check form-switch mb-3">
+                {{ form.is_24h(class="form-check-input", id="is_24h_switch", onclick="toggleTimeFields()") }}
+                {{ form.is_24h.label(class="form-check-label") }}
+            </div>
+
+            <div id="time-fields">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.start_time.label(class="form-label") }}
+                        {{ form.start_time(class="form-control", type="time") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.end_time.label(class="form-label") }}
+                        {{ form.end_time(class="form-control", type="time") }}
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+            <h5>Dias da Semana Permitidos</h5>
+            <div class="d-flex flex-wrap">
+                <div class="form-check me-3 mb-2">{{ form.day_mon(class="form-check-input") }} {{ form.day_mon.label(class="form-check-label") }}</div>
+                <div class="form-check me-3 mb-2">{{ form.day_tue(class="form-check-input") }} {{ form.day_tue.label(class="form-check-label") }}</div>
+                <div class="form-check me-3 mb-2">{{ form.day_wed(class="form-check-input") }} {{ form.day_wed.label(class="form-check-label") }}</div>
+                <div class="form-check me-3 mb-2">{{ form.day_thu(class="form-check-input") }} {{ form.day_thu.label(class="form-check-label") }}</div>
+                <div class="form-check me-3 mb-2">{{ form.day_fri(class="form-check-input") }} {{ form.day_fri.label(class="form-check-label") }}</div>
+                <div class="form-check me-3 mb-2">{{ form.day_sat(class="form-check-input") }} {{ form.day_sat.label(class="form-check-label") }}</div>
+                <div class="form-check me-3 mb-2">{{ form.day_sun(class="form-check-input") }} {{ form.day_sun.label(class="form-check-label") }}</div>
+            </div>
+
+            <hr>
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('group.list_groups') }}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleTimeFields() {
+        const is24h = document.getElementById('is_24h_switch').checked;
+        const timeFields = document.getElementById('time-fields');
+        timeFields.style.display = is24h ? 'none' : 'block';
+    }
+    // Executa a função na carga da página para definir o estado inicial correto
+    document.addEventListener('DOMContentLoaded', toggleTimeFields);
+</script>
+{% endblock %}

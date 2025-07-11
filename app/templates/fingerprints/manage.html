@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Digitais de {{ user.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Digitais de {{ user.name }}</h1>
+    <a href="{{ url_for('fingerprint.enroll', user_id=user.id) }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Cadastrar Nova Digital
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Dedo</th>
+                    <th>Zona de Acesso</th>
+                    <th>ID no Sensor</th>
+                    <th>Data de Cadastro</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fp in fingerprints %}
+                <tr>
+                    <td>{{ fp.finger_name }}</td>
+                    <td>{{ fp.zone.name }}</td>
+                    <td>{{ fp.finger_id_on_sensor }}</td>
+                    <td>{{ fp.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td class="text-end">
+                        <form action="{{ url_for('fingerprint.delete_fingerprint', fp_id=fp.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir esta digital do sistema E do sensor físico?');">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">Nenhuma digital cadastrada para este usuário.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Grupos de Acesso{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Grupos de Acesso</h1>
+    <a href="{{ url_for('group.add_group') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Adicionar Novo Grupo
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Nome do Grupo</th>
+                    <th>Horário de Acesso</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for group in groups %}
+                <tr>
+                    <td>{{ group.name }}</td>
+                    <td>
+                        {% if group.is_24h %}
+                            Acesso 24 Horas
+                        {% else %}
+                            Das {{ group.start_time.strftime('%H:%M') }} às {{ group.end_time.strftime('%H:%M') }}
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('group.edit_group', group_id=group.id) }}" class="btn btn-sm btn-secondary" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form action="{{ url_for('group.delete_group', group_id=group.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este grupo? Usuários associados a ele perderão o acesso.');">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-center">Nenhum grupo de acesso cadastrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

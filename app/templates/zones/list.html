@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Zonas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Zonas de Acesso</h1>
+    <a href="{{ url_for('zone.add_zone') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Adicionar Nova Zona
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Hostname do ESP32</th>
+                    <th>Descrição</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for zone in zones %}
+                <tr>
+                    <td>{{ zone.name }}</td>
+                    <td>{{ zone.esphome_hostname }}</td>
+                    <td>{{ zone.description }}</td>
+                    <td class="text-end">
+                    <a href="{{ url_for('zone.edit_zone', zone_id=zone.id) }}" class="btn btn-sm btn-secondary" title="Editar">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+
+                    <form action="{{ url_for('zone.delete_all_fingerprints', zone_id=zone.id) }}" method="POST" class="d-inline" onsubmit="return confirm('ATENÇÃO! Esta ação é irreversível e apagará TODAS as digitais deste módulo físico e do sistema. Deseja continuar?');">
+                        <button type="submit" class="btn btn-sm btn-warning" title="Apagar Todas as Digitais">
+                            <i class="bi bi-eraser"></i>
+                        </button>
+                    </form>
+                    <form action="{{ url_for('zone.delete_zone', zone_id=zone.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir esta zona?');">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center">Nenhuma zona cadastrada.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

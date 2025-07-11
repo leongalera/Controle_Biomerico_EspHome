@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Usuários{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Usuários</h1>
+    <a href="{{ url_for('user.add_user') }}" class="btn btn-primary">
+        <i class="bi bi-person-plus"></i> Adicionar Novo Usuário
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Grupo de Acesso</th>
+                    <th>Status</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.access_group.name }}</td>
+                    <td>
+                        {% if user.is_active %}
+                            <span class="badge bg-success">Ativo</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inativo</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <form action="{{ url_for('user.toggle_active', user_id=user.id) }}" method="POST" class="d-inline">
+                            {% if user.is_active %}
+                            <button type="submit" class="btn btn-sm btn-warning" title="Desativar"><i class="bi bi-pause-circle"></i></button>
+                            {% else %}
+                            <button type="submit" class="btn btn-sm btn-success" title="Ativar"><i class="bi bi-play-circle"></i></button>
+                            {% endif %}
+                        </form>
+
+                        <a href="{{ url_for('fingerprint.manage_fingerprints', user_id=user.id) }}" class="btn btn-sm btn-info" title="Gerenciar Digitais">
+                            <i class="bi bi-fingerprint"></i>
+                        </a>
+                        <a href="{{ url_for('user.edit_user', user_id=user.id) }}" class="btn btn-sm btn-secondary" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form action="{{ url_for('user.delete_user', user_id=user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('ATENÇÃO! Excluir um usuário removerá TODAS as suas digitais e logs de acesso. Deseja continuar?');">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center">Nenhum usuário cadastrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
