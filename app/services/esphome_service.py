@@ -57,25 +57,8 @@ async def enroll_fingerprint(hostname, api_key, finger_id_on_sensor, q, user_id,
         
         await asyncio.wait_for(enrollment_done_event.wait(), timeout=60.0)
         
-        # print("status final:", final_status)
-        if final_status == "SUCESSO":
-            q.put(f"STATUS: {final_status}")
-            current_app.logger.info("Salvando digital no banco de dados...")
-            try:
-                new_fingerprint = Fingerprint(
-                    user_id=user_id,
-                    zone_id=zone_id,
-                    finger_id_on_sensor=finger_id_on_sensor,
-                    finger_name=finger_name
-                )
-                db.session.add(new_fingerprint)
-                db.session.commit()
-                q.put("INFO: Digital salva com sucesso no banco de dados!")
-
-            except Exception as db_exc:
-                db.session.rollback()
-                q.put(f"ERRO FATAL: Falha ao salvar no banco de dados: {db_exc}")
-                current_app.logger.error(f"Falha ao salvar no BD: {db_exc}", exc_info=True)
+        # A função agora apenas retorna o status final
+        return final_status
 
     except asyncio.TimeoutError:
         q.put("ERRO: O processo de cadastro demorou demais (timeout).")
@@ -83,8 +66,7 @@ async def enroll_fingerprint(hostname, api_key, finger_id_on_sensor, q, user_id,
         q.put(f"ERRO: {e}")
     finally:
         await cli.disconnect()
-        current_app.logger.info("AIOESPHOMEAPI: Cliente desconectado.")
-        q.put(None)
+
 
 
 async def delete_fingerprint_from_sensor(hostname, api_key, finger_id_to_delete):

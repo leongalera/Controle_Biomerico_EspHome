@@ -77,7 +77,7 @@
                 await fetch('/api/fingerprint/cancel_enroll', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ user_id: {{ user.id }} })
+                    body: JSON.stringify({ user_id: user.id  })
                 });
                 log.textContent += 'Processo de cadastro cancelado no dispositivo.\n';
             } catch (error) {
@@ -110,22 +110,31 @@
             eventSource.onmessage = function(event) {
                 const data = event.data;
                 log.textContent += data + '\n';
-                log.scrollTop = log.scrollHeight;
+                log.scrollTop = log.scrollHeight; // Auto-scroll
 
-                // Verifica a mensagem final de sucesso do banco de dados
+                let processFinished = false;
+
+                // Condição final de sucesso: salvou no banco
                 if (data.includes("INFO: Digital salva com sucesso no banco de dados!")) {
-                    finalMsg.textContent = 'Sucesso! Redirecionando em 3 segundos...';
+                    finalMsg.textContent = 'Sucesso! Redirecionando em 5 segundos...';
                     finalMsg.classList.remove('d-none', 'alert-danger');
                     finalMsg.classList.add('alert-success');
+                    processFinished = true;
                     
-                    // Redireciona para a página de gerenciamento de digitais após um delay
                     setTimeout(function() {
                         window.location.href = "{{ url_for('fingerprint.manage_fingerprints', user_id=user.id) }}";
-                    }, 3000); // 3000 milissegundos = 3 segundos
+                    }, 5000);
+                } 
+                // Condição final de erro ou falha
+                else if (data.includes("ERRO") || data.includes("FALHA")) {
+                    finalMsg.textContent = 'Ocorreu uma falha no processo. Verifique o log e tente novamente.';
+                    finalMsg.classList.remove('d-none', 'alert-success');
+                    finalMsg.classList.add('alert-danger');
+                    processFinished = true;
                 }
 
-                // Para o processo se houver erro ou o primeiro sucesso do sensor
-                if (data.includes("ERRO") || data.includes("FALHA") || data.includes("SUCESSO")) {
+                // A conexão só será encerrada se o processo tiver um fim definitivo (sucesso ou falha)
+                if (processFinished) {
                     eventSource.close();
                     resetFormState();
                 }
@@ -138,8 +147,7 @@
             };
         });
     });
-</script>
-<script>
+
     // Função assíncrona para buscar o próximo ID
     async function updateNextFingerId() {
         // Pega os elementos do formulário pelo ID

@@ -50,11 +50,12 @@ def stream_enroll(user_id):
 
     def process_stream():
         q = queue.Queue()
-
         def run_async_enroll(app):
+            final_status_from_sensor = "ERRO"
             with app.app_context():
                 try:
-                    asyncio.run(enroll_fingerprint(
+                    # 1. Executa a comunicação com o sensor e guarda o resultado
+                    final_status_from_sensor = asyncio.run(enroll_fingerprint(
                         zone.esphome_hostname,
                         zone.esphome_api_key,
                         finger_id_on_sensor,
@@ -65,19 +66,37 @@ def stream_enroll(user_id):
                     ))
                 except Exception as e:
                     current_app.logger.error(f"ERRO CRÍTICO NA THREAD: {e}", exc_info=True)
-                    # Se um erro crítico acontecer aqui, ainda precisamos sinalizar o fim.
-                    q.put(None)
+                    q.put(f"ERRO CRÍTICO NA THREAD: {e}")
+                
+                # --- INÍCIO DA NOVA LÓGICA ---
+                # 2. APÓS a comunicação terminar, verifica o resultado
+                if final_status_from_sensor == "SUCESSO":
+                    current_app.logger.info("Salvando digital no banco de dados...")
+                    try:
+                        new_fingerprint = Fingerprint(
+                            user_id=user_id,
+                            zone_id=zone_id,
+                            finger_id_on_sensor=finger_id_on_sensor,
+                            finger_name=finger_name
+                        )
+                        db.session.add(new_fingerprint)
+                        db.session.commit()
+                        # 3. Envia a mensagem final para a fila
+                        q.put("INFO: Digital salva com sucesso no banco de dados!")
+                    except Exception as db_exc:
+                        db.session.rollback()
+                        q.put(f"ERRO FATAL: Falha ao salvar no banco de dados: {db_exc}")
+
+                q.put(None)
 
         thread = threading.Thread(target=run_async_enroll, args=(app_instance,))
         thread.start()
 
-        # A rota agora só se preocupa em repassar as mensagens da fila
         while True:
             status = q.get()
             if status is None:
                 break
             yield f"data: {status}\n\n"
-        
         thread.join()
 
     return Response(process_stream(), mimetype='text/event-stream')
