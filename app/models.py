@@ -75,3 +75,27 @@ class AccessLog(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     finger_used = db.Column(db.String(50), nullable=True)
     matched_finger_id = db.Column(db.Integer, nullable=True) # ID da digital no sensor
+
+
+# Tabela de Associação para a relação Muitos-para-Muitos
+password_zone_association = db.Table('password_zone_association',
+    db.Column('password_id', db.Integer, db.ForeignKey('password.id'), primary_key=True),
+    db.Column('zone_id', db.Integer, db.ForeignKey('zone.id'), primary_key=True)
+)
+
+class Password(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.String(150), nullable=False)
+    value = db.Column(db.String(50), nullable=False, unique=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Relação com as Zonas
+    zones = db.relationship('Zone', secondary=password_zone_association, lazy='subquery',
+                            backref=db.backref('passwords', lazy=True))
+    
+class PasswordLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    zone_name = db.Column(db.String(100), nullable=False)
+    password_submitted = db.Column(db.String(50), nullable=False)
+    result = db.Column(db.String(50), nullable=False) # Ex: "Válida", "Inválida"
+    notes = db.Column(db.String(100), nullable=True) # Ex: "Não permitida para esta zona"

@@ -3,10 +3,161 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-    <div class="px-4 py-5 my-5 text-center">
-        <h1 class="display-5 fw-bold">Bem-vindo ao Painel de Controle Biométrico</h1>
-        <div class="col-lg-6 mx-auto">
-            <p class="lead mb-4">Utilize o menu de navegação acima para gerenciar as zonas de acesso, usuários e digitais.</p>
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Usuários Cadastrados</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ user_count }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-people-fill fs-2 text-gray-300"></i></div>
+                </div>
+            </div>
         </div>
     </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Zonas Ativas</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ zone_count }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-door-open-fill fs-2 text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Grupos de Acesso</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ group_count }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-collection-fill fs-2 text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Senhas Cadastradas</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ password_count }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-key-fill fs-2 text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-5 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Panorama de Acessos</h6>
+                <div class="col-md-5">
+                    <select id="zone-filter-select" class="form-select form-select-sm">
+                        <option value="all" selected>Todas as Zonas</option>
+                        {% for zone in zones %}
+                            <option value="{{ zone.name }}">{{ zone.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="card-body"><canvas id="accessChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="col-xl-7 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Últimas Atividades</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for log in recent_logs %}
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">
+                                    {% if log.type == 'biometria' %}
+                                        <i class="bi bi-fingerprint text-info"></i> {{ log.user.name if log.user else 'Desconhecido' }}
+                                    {% else %}
+                                        <i class="bi bi-shield-lock-fill text-secondary"></i> Senha: {{ log.password_submitted }}
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ log.zone_name }} - {{ (log.timestamp | localtime).strftime('%d/%m %H:%M:%S') }}</small>
+                            </div>
+                            {% if (log.type == 'biometria' and log.result == 'Autorizado') or (log.type == 'senha' and log.result == 'Válida') %}
+                                <span class="badge bg-success rounded-pill">Sucesso</span>
+                            {% else %}
+                                <span class="badge bg-danger rounded-pill">Falha</span>
+                            {% endif %}
+                        </li>
+                    {% else %}
+                        <li class="list-group-item">Nenhuma atividade recente.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('accessChart').getContext('2d');
+        const initialChartData = {{ access_chart_data | tojson }};
+
+        // Cria a instância do gráfico e a armazena em uma variável
+        const accessChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: initialChartData.labels,
+                datasets: [{
+                    data: initialChartData.data,
+                    backgroundColor: ['#198754', '#dc3545'],
+                    hoverBackgroundColor: ['#157347', '#bb2d3b'],
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: { /* ... suas opções de gráfico ... */ }
+        });
+
+        // --- INÍCIO DA NOVA LÓGICA ---
+
+        // Função para atualizar o gráfico com novos dados
+        async function updateChart(zoneName) {
+            try {
+                // Chama nossa nova API para buscar os dados da zona selecionada
+                const response = await fetch(`/api/chart_data?zone=${zoneName}`);
+                const newData = await response.json();
+
+                // Atualiza os dados do gráfico existente
+                accessChart.data.datasets[0].data = newData.data;
+                // Aciona a atualização da renderização do gráfico
+                accessChart.update();
+            } catch (error) {
+                console.error('Erro ao atualizar o gráfico:', error);
+            }
+        }
+
+        // Adiciona um "ouvinte" ao nosso menu de filtro
+        const zoneFilter = document.getElementById('zone-filter-select');
+        zoneFilter.addEventListener('change', function() {
+            // Quando o valor do menu muda, chama a função de atualização
+            updateChart(this.value);
+        });
+
+        // --- FIM DA NOVA LÓGICA ---
+    });
+</script>
 {% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Senhas de Acesso</h1>
+    <a href="{{ url_for('password.add_password') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Adicionar Nova Senha</a>
+</div>
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead><tr><th>Descrição</th><th>Senha</th><th>Zonas Permitidas</th><th class="text-end">Ações</th></tr></thead>
+            <tbody>
+            {% for p in passwords %}
+            <tr>
+                <td>{{ p.description }}</td>
+                <td>
+                    <span class="password-value" style="display: none;">{{ p.value }}</span>
+                    <span class="password-hidden">******</span>
+                    <i class="bi bi-eye-fill ms-2" style="cursor: pointer;" onclick="togglePassword(this)"></i>
+                </td>
+                <td>
+                    {% for zone in p.zones %}
+                    <span class="badge bg-secondary">{{ zone.name }}</span>
+                    {% endfor %}
+                </td>
+                <td class="text-end">
+                    <a href="{{ url_for('password.edit_password', password_id=p.id) }}" class="btn btn-sm btn-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+                    <form action="{{ url_for('password.delete_password', password_id=p.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza?');">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Excluir"><i class="bi bi-trash"></i></button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center">Nenhuma senha cadastrada.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+function togglePassword(eyeIcon) {
+    const row = eyeIcon.closest('tr');
+    const hidden = row.querySelector('.password-hidden');
+    const value = row.querySelector('.password-value');
+    if (hidden.style.display === 'none') {
+        hidden.style.display = 'inline';
+        value.style.display = 'none';
+        eyeIcon.classList.replace('bi-eye-slash-fill', 'bi-eye-fill');
+    } else {
+        hidden.style.display = 'none';
+        value.style.display = 'inline';
+        eyeIcon.classList.replace('bi-eye-fill', 'bi-eye-slash-fill');
+    }
+}
+</script>
+{% endblock %}

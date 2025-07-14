@@ -12,6 +12,7 @@ from app.models import AccessGroup
 from app.models import Zone
 from wtforms.fields import DateField
 from .models import User # Adicionar User
+from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 
 class LoginForm(FlaskForm):
     username = StringField('Usuário', validators=[DataRequired()])
@@ -131,3 +132,29 @@ class LogFilterForm(FlaskForm):
 
     submit = SubmitField('Filtrar')
     clear = SubmitField('Limpar Filtros')
+
+
+class PasswordForm(FlaskForm):
+    description = StringField('Descrição da Senha', 
+                              description='Ex: Senha para Entregas, Senha de Emergência', 
+                              validators=[DataRequired(), Length(max=150)])
+    value = StringField('Senha Numérica', validators=[DataRequired(), Length(min=4, max=50)])
+
+    # Este campo especial permite selecionar múltiplas zonas
+    zones = QuerySelectMultipleField(
+        'Zonas Permitidas',
+        query_factory=zone_query, # Reutiliza a função que criamos para os filtros
+        get_label='name',
+        allow_blank=False
+    )
+    submit = SubmitField('Salvar Senha')
+
+
+class PasswordLogFilterForm(FlaskForm):
+    start_date = DateField('Data Início', format='%Y-%m-%d', validators=[Optional()])
+    end_date = DateField('Data Fim', format='%Y-%m-%d', validators=[Optional()])
+
+    # O campo de Zonas será populado dinamicamente na rota
+    zone = SelectField('Zona', choices=[], validators=[Optional()])
+
+    submit = SubmitField('Filtrar')

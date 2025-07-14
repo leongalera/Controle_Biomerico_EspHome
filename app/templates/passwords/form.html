@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control") }}
+                <div class="form-text">{{ form.description.description }}</div>
+            </div>
+            <div class="mb-3">
+                {{ form.value.label(class="form-label") }}
+                {{ form.value(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.zones.label(class="form-label") }}
+                {{ form.zones(class="form-select", size=5) }}
+                <div class="form-text">Segure Ctrl (ou Cmd no Mac) para selecionar múltiplas zonas.</div>
+            </div>
+            <hr>
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('password.list_passwords') }}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

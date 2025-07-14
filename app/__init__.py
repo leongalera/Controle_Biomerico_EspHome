@@ -5,9 +5,29 @@ from .models import db, AdminUser
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_apscheduler import APScheduler
+from datetime import datetime
+import pytz
 
 def create_app():
     app = Flask(__name__)
+
+    @app.template_filter('localtime')
+    def localtime_filter(utc_dt):
+        # Define o fuso horário de origem (UTC) e o de destino (seu local)
+        utc_zone = pytz.timezone('UTC')
+        local_zone = pytz.timezone('America/Sao_Paulo') # Ajuste se o seu fuso for diferente
+
+        if utc_dt is None:
+            return ""
+
+        # Converte o horário do banco de dados (que é 'naive') para um horário 'aware' em UTC
+        aware_utc_dt = utc_zone.localize(utc_dt)
+
+        # Converte para o fuso horário local
+        local_dt = aware_utc_dt.astimezone(local_zone)
+        return local_dt
+
+    app.jinja_env.add_extension('jinja2.ext.do')
     app.config.from_object(Config)
 
     # Inicializa o agendador
@@ -39,6 +59,7 @@ def create_app():
     from .routes.fingerprint_routes import fingerprint_bp
     from .routes.api_routes import api_bp
     from .routes.monitoring_routes import monitoring_bp
+    from .routes.password_routes import password_bp
 
     # Registra a tarefa para rodar a cada 60 segundos
     from . import scheduler_jobs
@@ -53,5 +74,6 @@ def create_app():
     app.register_blueprint(fingerprint_bp)
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(monitoring_bp)
-
+    app.register_blueprint(password_bp)
+    
     return app

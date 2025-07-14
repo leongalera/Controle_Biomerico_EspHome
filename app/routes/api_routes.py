@@ -1,7 +1,9 @@
 # app/routes/api_routes.py
 from flask import Blueprint, request, jsonify
-from app.models import db, AccessLog, Fingerprint, User, Zone
+from flask_login import login_required
+from app.models import db, AccessLog, Fingerprint, User, Zone, Password, PasswordLog
 from datetime import datetime
+from sqlalchemy import func
 
 api_bp = Blueprint('api', __name__)
 
@@ -112,3 +114,73 @@ def log_inactive_access():
     db.session.add(log)
     db.session.commit()
     return jsonify({"status": "success"}), 200
+
+
+@api_bp.route('/verify_password', methods=['POST'])
+def verify_password():
+    data = request.json
+    password_value = data.get('password')
+    zone_prefix = data.get('zona')
+
+    if not all([password_value, zone_prefix]):
+        return jsonify({'valid': False, 'reason': 'Payload incompleto'}), 400
+
+    zone_name_for_log = f"Prefixo: {zone_prefix}"
+    zone = Zone.query.filter_by(prefix=zone_prefix).first()
+    if zone:
+        zone_name_for_log = zone.name
+
+    password_entry = Password.query.filter_by(value=password_value).first()
+
+    # Caso 1: Senha não existe no banco de dados
+    if not password_entry:
+        log = PasswordLog(zone_name=zone_name_for_log, password_submitted=password_value, result="Inválida")
+        db.session.add(log)
+        db.session.commit()
+        return jsonify({'valid': False, 'reason': 'Senha inválida'})
+
+    # Caso 2: Senha existe, mas não está associada a esta zona
+    is_zone_allowed = any(z.prefix == zone_prefix for z in password_entry.zones)
+    if not is_zone_allowed:
+        log = PasswordLog(zone_name=zone_name_for_log, password_submitted=password_value, result="Não Permitida", notes=f"Senha válida, mas não para a zona {zone_name_for_log}")
+        db.session.add(log)
+        db.session.commit()
+        return jsonify({'valid': False, 'reason': 'Senha não permitida para esta zona'})
+
+    # Caso 3: Sucesso! Senha válida e permitida para a zona
+    log = PasswordLog(zone_name=zone_name_for_log, password_submitted=password_value, result="Válida")
+    db.session.add(log)
+    db.session.commit()
+    return jsonify({'valid': True})
+
+
+@api_bp.route('/chart_data')
+@login_required
+def get_chart_data():
+    # Pega o nome da zona dos parâmetros da URL (ex: /chart_data?zone=Porta%20Principal)
+    zone_name = request.args.get('zone')
+
+    # Constrói a query base
+    query_bio = AccessLog.query
+    query_pass = PasswordLog.query
+
+    # Se uma zona específica foi selecionada, adiciona o filtro
+    if zone_name and zone_name != 'all':
+        query_bio = query_bio.filter_by(zone_name=zone_name)
+        query_pass = query_pass.filter_by(zone_name=zone_name)
+
+    # Calcula os totais com base na query (filtrada ou não)
+    authorized_bio = query_bio.filter(AccessLog.result == 'Autorizado').count()
+    authorized_pass = query_pass.filter(PasswordLog.result == 'Válida').count()
+    total_authorized = authorized_bio + authorized_pass
+
+    denied_bio = query_bio.filter(AccessLog.result != 'Autorizado').count()
+    denied_pass = query_pass.filter(PasswordLog.result != 'Válida').count()
+    total_denied = denied_bio + denied_pass
+
+    # Retorna os dados em formato JSON
+    return jsonify({
+        'labels': ['Autorizados', 'Negados'],
+        'data': [total_authorized, total_denied],
+    })
+

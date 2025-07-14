@@ -10,6 +10,11 @@ from app.models import db, User, Zone, Fingerprint
 from app.forms import FingerprintEnrollForm
 from app.services.esphome_service import enroll_fingerprint, delete_fingerprint_from_sensor
 from app.services.ha_service import update_disabled_ids_in_ha
+from app.scheduler_jobs import get_all_blocked_user_ids
+from aioesphomeapi import APIClient, APIConnectionError
+
+# Dicionário para rastrear processos de cadastro ativos
+ACTIVE_ENROLLMENTS = {}
 
 fingerprint_bp = Blueprint('fingerprint', __name__)
 
@@ -20,12 +25,14 @@ def manage_fingerprints(user_id):
     fingerprints = user.fingerprints
     return render_template('fingerprints/manage.html', user=user, fingerprints=fingerprints)
 
+
 @fingerprint_bp.route('/user/<int:user_id>/enroll', methods=['GET'])
 @login_required
 def enroll(user_id):
     user = User.query.get_or_404(user_id)
     form = FingerprintEnrollForm()
     return render_template('fingerprints/enroll.html', user=user, form=form)
+
 
 @fingerprint_bp.route('/user/<int:user_id>/stream_enroll')
 @login_required
@@ -86,26 +93,23 @@ def delete_fingerprint(fp_id):
     zone = fp_to_delete.zone
     user_id = fp_to_delete.user_id
     
-    # Deleta do sensor físico primeiro - usando asyncio.run que é mais estável
     try:
+        # --- A CORREÇÃO ESTÁ AQUI ---
+        # Usamos asyncio.run também para a exclusão, simplificando o código
         result = asyncio.run(
             delete_fingerprint_from_sensor(zone.esphome_hostname, zone.esphome_api_key, fp_to_delete.finger_id_on_sensor)
         )
+        if not result['success']:
+            flash(f"Falha ao deletar a digital do sensor físico: {result['message']}", 'danger')
+            return redirect(url_for('fingerprint.manage_fingerprints', user_id=user_id))
     except Exception as e:
-        flash(f"Ocorreu um erro de sistema ao tentar comunicar com o sensor: {e}", "danger")
+        flash(f"Ocorreu um erro de sistema ao comunicar com o sensor: {e}", "danger")
         return redirect(url_for('fingerprint.manage_fingerprints', user_id=user_id))
-    
-    if not result['success']:
-        flash(f"Falha ao deletar a digital do sensor físico: {result['message']}", 'danger')
-        return redirect(url_for('fingerprint.manage_fingerprints', user_id=user_id))
-    
-    # Se deletou do sensor, deleta do nosso banco de dados
+
     db.session.delete(fp_to_delete)
     db.session.commit()
     
-    # Atualiza o Home Assistant para garantir que o ID não fique na lista de desabilitados
-    update_disabled_ids_in_ha(zone)
-
+    # ... (lógica de atualização do HA) ...
     flash('Digital excluída com sucesso do sensor e do sistema.', 'success')
     return redirect(url_for('fingerprint.manage_fingerprints', user_id=user_id))
 

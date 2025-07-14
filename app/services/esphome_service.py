@@ -2,7 +2,7 @@
 
 import asyncio
 from flask import current_app
-from aioesphomeapi import APIClient, APIConnectionError, TextSensorState
+from aioesphomeapi import APIClient, TextSensorState
 from app.models import db, Fingerprint
 
 # Variável para armazenar a 'key' interna do nosso sensor alvo
@@ -26,7 +26,7 @@ async def enroll_fingerprint(hostname, api_key, finger_id_on_sensor, q, user_id,
 
             if isinstance(state, TextSensorState) and state.key == TARGET_ENTITY_KEY:
                 status_msg = state.state
-                q.put(f"STATUS: {status_msg}")
+                # q.put(f"STATUS: {status_msg}")
                 # Se o processo terminou, aciona nosso sinalizador
                 if "SUCESSO" in status_msg:
                     final_status = "SUCESSO"
@@ -59,9 +59,9 @@ async def enroll_fingerprint(hostname, api_key, finger_id_on_sensor, q, user_id,
         
         await asyncio.wait_for(enrollment_done_event.wait(), timeout=60.0)
         
-        # --- LÓGICA DO BANCO DE DADOS MOVIDA PARA CÁ ---
         # print("status final:", final_status)
         if final_status == "SUCESSO":
+            q.put(f"STATUS: {final_status}")
             current_app.logger.info("Salvando digital no banco de dados...")
             try:
                 new_fingerprint = Fingerprint(
@@ -73,6 +73,7 @@ async def enroll_fingerprint(hostname, api_key, finger_id_on_sensor, q, user_id,
                 db.session.add(new_fingerprint)
                 db.session.commit()
                 q.put("INFO: Digital salva com sucesso no banco de dados!")
+
             except Exception as db_exc:
                 db.session.rollback()
                 q.put(f"ERRO FATAL: Falha ao salvar no banco de dados: {db_exc}")
@@ -86,6 +87,7 @@ async def enroll_fingerprint(hostname, api_key, finger_id_on_sensor, q, user_id,
 
 
 async def delete_fingerprint_from_sensor(hostname, api_key, finger_id_to_delete):
+    # A assinatura da função não tem mais o 'loop'
     cli = APIClient(hostname, 6053, password=None, noise_psk=api_key)
     try:
         await cli.connect(login=True)
@@ -100,8 +102,12 @@ async def delete_fingerprint_from_sensor(hostname, api_key, finger_id_to_delete)
     finally:
         await cli.disconnect()
 
+
 async def delete_all_fingerprints_from_sensor(hostname, api_key):
-    """Usa aioesphomeapi para apagar TODAS as digitais de um sensor."""
+    """
+    Usa aioesphomeapi para apagar TODAS as digitais de um sensor.
+    Versão corrigida com a sintaxe correta da API.
+    """
     cli = APIClient(hostname, 6053, password=None, noise_psk=api_key)
     try:
         await cli.connect(login=True)
@@ -113,11 +119,10 @@ async def delete_all_fingerprints_from_sensor(hostname, api_key):
         if not service_to_run:
             raise ValueError("O serviço 'excluir_todos' não foi encontrado no dispositivo ESP32.")
 
-        # Executa o serviço sem dados adicionais
+        # Executa o serviço sem dados, e sem 'await'
         cli.execute_service(service_to_run, {})
         
-        # Opcional: podemos adicionar um pequeno delay para garantir que o comando seja processado
-        await asyncio.sleep(1) 
+        await asyncio.sleep(1) # Delay para garantir que o comando seja processado
         
         return {"success": True, "message": "Comando para apagar todas as digitais foi enviado com sucesso."}
     except Exception as e:

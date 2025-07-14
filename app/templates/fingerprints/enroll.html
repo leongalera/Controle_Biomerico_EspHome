@@ -23,7 +23,11 @@
                         {{ form.finger_name.label(class="form-label") }}
                         {{ form.finger_name(class="form-select") }}
                     </div>
-                    {{ form.submit(class="btn btn-success", id="submitBtn") }}
+                    <div id="form-buttons">
+                        <a href="{{ url_for('fingerprint.manage_fingerprints', user_id=user.id) }}" id="backBtn" class="btn btn-secondary">Voltar</a>
+                        {{ form.submit(class="btn btn-success", id="submitBtn") }}
+                        <button type="button" id="cancelBtn" class="btn btn-danger" style="display: none;">Cancelar Processo</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -36,52 +40,90 @@
 </div>
 
 <script>
-    document.getElementById('enrollForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const form = e.target;
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... (função async function updateNextFingerId()... continua a mesma) ...
+        document.getElementById('zone').addEventListener('change', updateNextFingerId);
+        document.addEventListener('DOMContentLoaded', updateNextFingerId);
+
+
+        // --- LÓGICA DO FORMULÁRIO DE CADASTRO ---
+        const enrollForm = document.getElementById('enrollForm');
         const log = document.getElementById('statusLog');
-        const submitBtn = document.getElementById('submitBtn');
         const finalMsg = document.getElementById('finalMessage');
 
-        // Limpa o log e desabilita o botão
-        log.textContent = 'Iniciando...\n';
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Cadastrando...';
-        finalMsg.classList.add('d-none');
+        // Referências para os nossos botões
+        const submitBtn = document.getElementById('submitBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const backBtn = document.getElementById('backBtn');
 
-        const formData = new FormData(form);
-        const params = new URLSearchParams(formData).toString();
+        let eventSource = null; // Variável para guardar nossa conexão de streaming
 
-        // Conecta ao endpoint de streaming (Server-Sent Events)
-        const eventSource = new EventSource("{{ url_for('fingerprint.stream_enroll', user_id=user.id) }}?" + params);
-
-        eventSource.onmessage = function(event) {
-            const data = event.data;
-            log.textContent += data + '\n';
-            log.scrollTop = log.scrollHeight; // Auto-scroll
-
-            if (data.includes("ERRO") || data.includes("FALHA")) {
-                finalMsg.textContent = 'Ocorreu uma falha no cadastro. Verifique o log e tente novamente.';
-                finalMsg.className = 'alert alert-danger mt-3';
-                eventSource.close();
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Iniciar Cadastro';
-            } else if (data.includes("SUCESSO")) {
-                finalMsg.textContent = 'Digital cadastrada com sucesso! Você será redirecionado em 5 segundos.';
-                finalMsg.className = 'alert alert-success mt-3';
-                eventSource.close();
-                setTimeout(() => {
-                    window.location.href = "{{ url_for('user.list_users') }}";
-                }, 5000);
-            }
-        };
-
-        eventSource.onerror = function() {
-            log.textContent += 'ERRO: A conexão com o servidor foi perdida.\n';
+        // Função para resetar o formulário para o estado inicial
+        function resetFormState() {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Iniciar Cadastro';
-            eventSource.close();
-        };
+            cancelBtn.style.display = 'none';
+            backBtn.style.display = 'inline-block';
+        }
+
+        // Evento de clique no botão CANCELAR
+        cancelBtn.addEventListener('click', async function() {
+            log.textContent += 'CANCELANDO PROCESSO...\n';
+
+            // Pega a zona selecionada para saber para qual ESP enviar o comando
+            const zoneId = document.getElementById('zone').value;
+
+            try {
+                await fetch('/api/fingerprint/cancel_enroll', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ user_id: {{ user.id }} })
+                });
+                log.textContent += 'Processo de cadastro cancelado no dispositivo.\n';
+            } catch (error) {
+                log.textContent += 'Erro ao tentar cancelar.\n';
+                console.error('Erro no cancelamento:', error);
+            }
+
+            if (eventSource) {
+                eventSource.close(); // Fecha a conexão de streaming
+            }
+            resetFormState();
+        });
+
+        // Evento de SUBMIT do formulário
+        enrollForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            log.textContent = 'Iniciando...\n';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Cadastrando...';
+            cancelBtn.style.display = 'inline-block'; // Mostra o botão de cancelar
+            backBtn.style.display = 'none'; // Esconde o botão de voltar
+            finalMsg.classList.add('d-none');
+
+            const formData = new FormData(enrollForm);
+            const params = new URLSearchParams(formData).toString();
+
+            eventSource = new EventSource("{{ url_for('fingerprint.stream_enroll', user_id=user.id) }}?" + params);
+
+            eventSource.onmessage = function(event) {
+                const data = event.data;
+                log.textContent += data + '\n';
+                log.scrollTop = log.scrollHeight;
+
+                if (data.includes("ERRO") || data.includes("FALHA") || data.includes("SUCESSO")) {
+                    eventSource.close();
+                    resetFormState(); // Reseta os botões ao final do processo
+                }
+            };
+
+            eventSource.onerror = function() {
+                log.textContent += 'ERRO: A conexão com o servidor foi perdida.\n';
+                eventSource.close();
+                resetFormState(); // Reseta os botões em caso de erro
+            };
+        });
     });
 </script>
 <script>
