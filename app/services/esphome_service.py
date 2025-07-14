@@ -26,7 +26,7 @@ async def enroll_fingerprint(hostname, api_key, finger_id_on_sensor, q, user_id,
 
             if isinstance(state, TextSensorState) and state.key == TARGET_ENTITY_KEY:
                 status_msg = state.state
-                # q.put(f"STATUS: {status_msg}")
+                q.put(f"STATUS: {status_msg}")
                 # Se o processo terminou, aciona nosso sinalizador
                 if "SUCESSO" in status_msg:
                     final_status = "SUCESSO"
@@ -37,12 +37,10 @@ async def enroll_fingerprint(hostname, api_key, finger_id_on_sensor, q, user_id,
 
 
         entity_list, _ = await cli.list_entities_services()
-        entity_found = False
         # O loop agora itera sobre a variável correta: 'entity_list'
         for entity in entity_list:
             if "Status Cadastro Web" in entity.name:
                 TARGET_ENTITY_KEY = entity.key
-                entity_found = True
                 q.put(f"Entidade encontrada! Nome: '{entity.name}', Key interna: {TARGET_ENTITY_KEY}")
                 break
 
@@ -79,11 +77,14 @@ async def enroll_fingerprint(hostname, api_key, finger_id_on_sensor, q, user_id,
                 q.put(f"ERRO FATAL: Falha ao salvar no banco de dados: {db_exc}")
                 current_app.logger.error(f"Falha ao salvar no BD: {db_exc}", exc_info=True)
 
+    except asyncio.TimeoutError:
+        q.put("ERRO: O processo de cadastro demorou demais (timeout).")
     except Exception as e:
-        err_msg = f"ERRO: {e}"
-        q.put(err_msg)
+        q.put(f"ERRO: {e}")
     finally:
         await cli.disconnect()
+        current_app.logger.info("AIOESPHOMEAPI: Cliente desconectado.")
+        q.put(None)
 
 
 async def delete_fingerprint_from_sensor(hostname, api_key, finger_id_to_delete):

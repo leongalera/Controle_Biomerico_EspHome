@@ -112,9 +112,22 @@
                 log.textContent += data + '\n';
                 log.scrollTop = log.scrollHeight;
 
+                // Verifica a mensagem final de sucesso do banco de dados
+                if (data.includes("INFO: Digital salva com sucesso no banco de dados!")) {
+                    finalMsg.textContent = 'Sucesso! Redirecionando em 3 segundos...';
+                    finalMsg.classList.remove('d-none', 'alert-danger');
+                    finalMsg.classList.add('alert-success');
+                    
+                    // Redireciona para a página de gerenciamento de digitais após um delay
+                    setTimeout(function() {
+                        window.location.href = "{{ url_for('fingerprint.manage_fingerprints', user_id=user.id) }}";
+                    }, 3000); // 3000 milissegundos = 3 segundos
+                }
+
+                // Para o processo se houver erro ou o primeiro sucesso do sensor
                 if (data.includes("ERRO") || data.includes("FALHA") || data.includes("SUCESSO")) {
                     eventSource.close();
-                    resetFormState(); // Reseta os botões ao final do processo
+                    resetFormState();
                 }
             };
 

@@ -51,7 +51,6 @@ class Zone(db.Model):
     fingerprints = db.relationship('Fingerprint', backref='zone', lazy=True)
     prefix = db.Column(db.String(10), unique=True, nullable=False)
     # Define a zona de acesso, que pode ter múltiplas digitais
-    fingerprints = db.relationship('Fingerprint', backref='zone', lazy=True)
 
 class Fingerprint(db.Model):
     id = db.Column(db.Integer, primary_key=True)

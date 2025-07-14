@@ -37,7 +37,6 @@ def enroll(user_id):
 @fingerprint_bp.route('/user/<int:user_id>/stream_enroll')
 @login_required
 def stream_enroll(user_id):
-    # ... (leitura dos argumentos continua a mesma) ...
     user = User.query.get_or_404(user_id)
     zone_id = request.args.get('zone', type=int)
     finger_id_on_sensor = request.args.get('finger_id_on_sensor', type=int)
@@ -55,7 +54,6 @@ def stream_enroll(user_id):
         def run_async_enroll(app):
             with app.app_context():
                 try:
-                    # A chamada agora passa todos os dados necessários para a função de serviço
                     asyncio.run(enroll_fingerprint(
                         zone.esphome_hostname,
                         zone.esphome_api_key,
@@ -67,8 +65,7 @@ def stream_enroll(user_id):
                     ))
                 except Exception as e:
                     current_app.logger.error(f"ERRO CRÍTICO NA THREAD: {e}", exc_info=True)
-                    q.put(f"ERRO CRÍTICO NA THREAD: {e}")
-                finally:
+                    # Se um erro crítico acontecer aqui, ainda precisamos sinalizar o fim.
                     q.put(None)
 
         thread = threading.Thread(target=run_async_enroll, args=(app_instance,))
