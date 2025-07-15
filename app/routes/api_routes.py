@@ -4,6 +4,7 @@ from flask_login import login_required
 from app.models import db, AccessLog, Fingerprint, User, Zone, Password, PasswordLog
 from datetime import datetime
 from sqlalchemy import func
+from app.services.esphome_service import CANCEL_ENROLLMENT_FLAGS
 
 api_bp = Blueprint('api', __name__)
 
@@ -184,3 +185,17 @@ def get_chart_data():
         'data': [total_authorized, total_denied],
     })
 
+@api_bp.route('/fingerprint/cancel_enroll', methods=['POST'])
+@login_required
+def cancel_enroll():
+    data = request.json
+    user_id = data.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'message': 'ID do Usuário não fornecido'}), 400
+
+    # Apenas levanta a bandeira. A thread de cadastro verá isso e se cancelará.
+    if user_id in CANCEL_ENROLLMENT_FLAGS:
+        CANCEL_ENROLLMENT_FLAGS[user_id] = True
+        return jsonify({'success': True, 'message': 'Sinal de cancelamento enviado.'}), 200
+    else:
+        return jsonify({'success': False, 'message': 'Nenhum processo de cadastro ativo para cancelar.'}), 404

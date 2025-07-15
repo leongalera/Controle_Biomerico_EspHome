@@ -41,7 +41,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // ... (função async function updateNextFingerId()... continua a mesma) ...
+        // --- LÓGICA PARA BUSCAR O PRÓXIMO ID DE DIGITAL ---
         document.getElementById('zone').addEventListener('change', updateNextFingerId);
         document.addEventListener('DOMContentLoaded', updateNextFingerId);
 
@@ -50,8 +50,6 @@
         const enrollForm = document.getElementById('enrollForm');
         const log = document.getElementById('statusLog');
         const finalMsg = document.getElementById('finalMessage');
-
-        // Referências para os nossos botões
         const submitBtn = document.getElementById('submitBtn');
         const cancelBtn = document.getElementById('cancelBtn');
         const backBtn = document.getElementById('backBtn');
@@ -68,27 +66,15 @@
 
         // Evento de clique no botão CANCELAR
         cancelBtn.addEventListener('click', async function() {
-            log.textContent += 'CANCELANDO PROCESSO...\n';
-
-            // Pega a zona selecionada para saber para qual ESP enviar o comando
-            const zoneId = document.getElementById('zone').value;
-
-            try {
-                await fetch('/api/fingerprint/cancel_enroll', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ user_id: user.id  })
-                });
-                log.textContent += 'Processo de cadastro cancelado no dispositivo.\n';
-            } catch (error) {
-                log.textContent += 'Erro ao tentar cancelar.\n';
-                console.error('Erro no cancelamento:', error);
-            }
-
-            if (eventSource) {
-                eventSource.close(); // Fecha a conexão de streaming
-            }
-            resetFormState();
+            log.textContent += 'INFO: Solicitando cancelamento...\n';
+            log.scrollTop = log.scrollHeight;
+            // Envia o pedido para a API, que vai levantar a "bandeira"
+            await fetch('/api/fingerprint/cancel_enroll', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: {{ user.id }} })
+            });
+            // O backend cuidará do resto.
         });
 
         // Evento de SUBMIT do formulário
@@ -101,6 +87,7 @@
             cancelBtn.style.display = 'inline-block'; // Mostra o botão de cancelar
             backBtn.style.display = 'none'; // Esconde o botão de voltar
             finalMsg.classList.add('d-none');
+            cancelBtn.disabled = true; // Desabilita o botão de cancelar até que a conexão seja estabelecida
 
             const formData = new FormData(enrollForm);
             const params = new URLSearchParams(formData).toString();
@@ -114,6 +101,12 @@
 
                 let processFinished = false;
 
+                // Condição de progresso: atualiza o botão de cancelar
+                if (data.includes("STATUS: Iniciando... Coloque o dedo.")) {
+                    cancelBtn.disabled = false; // Habilita o botão de cancelar
+                    finalMsg.classList.add('d-none'); // Esconde a mensagem final
+                }
+
                 // Condição final de sucesso: salvou no banco
                 if (data.includes("INFO: Digital salva com sucesso no banco de dados!")) {
                     finalMsg.textContent = 'Sucesso! Redirecionando em 5 segundos...';
@@ -125,6 +118,26 @@
                         window.location.href = "{{ url_for('fingerprint.manage_fingerprints', user_id=user.id) }}";
                     }, 5000);
                 } 
+                // Condição de cancelamento: usuário cancelou o processo
+                else if (data.includes("INFO: Cadastro cancelado com sucesso.")) {
+                    finalMsg.textContent = 'Cadastro cancelado pelo usuário.';
+                    finalMsg.classList.remove('d-none', 'alert-success');
+                    finalMsg.classList.add('alert-warning');
+                    processFinished = true;
+                }
+                // Condição de cancelamento: cancelou por timeout
+                else if (data.includes("INFO: Cadastro cancelado.")) {
+                    finalMsg.textContent = 'INFO: Cadastro cancelado por timeout.';
+                    finalMsg.classList.remove('d-none', 'alert-success');
+                    finalMsg.classList.add('alert-warning');
+                    processFinished = true;
+                }
+                else if (data.includes("INFO: Cadastro cancelado com sucesso.")) {
+                    finalMsg.textContent = 'Cadastro cancelado pelo usuário.';
+                    finalMsg.classList.remove('d-none', 'alert-success');
+                    finalMsg.classList.add('alert-warning');
+                    processFinished = true;
+                }
                 // Condição final de erro ou falha
                 else if (data.includes("ERRO") || data.includes("FALHA")) {
                     finalMsg.textContent = 'Ocorreu uma falha no processo. Verifique o log e tente novamente.';
@@ -141,7 +154,7 @@
             };
 
             eventSource.onerror = function() {
-                log.textContent += 'ERRO: A conexão com o servidor foi perdida.\n';
+                log.textContent += 'INFO: A conexão com o servidor foi finalizada.\n';
                 eventSource.close();
                 resetFormState(); // Reseta os botões em caso de erro
             };

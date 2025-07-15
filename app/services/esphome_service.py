@@ -8,18 +8,46 @@ from app.models import db, Fingerprint
 # Variável para armazenar a 'key' interna do nosso sensor alvo
 TARGET_ENTITY_KEY = None
 
+# Dicionário para guardar os sinais de cancelamento
+CANCEL_ENROLLMENT_FLAGS = {}
+
 async def enroll_fingerprint(hostname, api_key, finger_id_on_sensor, q, user_id, zone_id, finger_name, num_scans=3):
-    """
-    Versão final e corrigida.
-    """
     cli = APIClient(hostname, 6053, password=None, noise_psk=api_key)
     enrollment_done_event = asyncio.Event()
     final_status = "ERRO"
+
+    # Garante que a "bandeira" de cancelamento para este usuário comece como falsa
+    CANCEL_ENROLLMENT_FLAGS[user_id] = False
+
+    async def _check_for_cancel_request():
+        nonlocal final_status
+        """Esta tarefa roda em paralelo, verificando a bandeira de cancelamento."""
+        while not enrollment_done_event.is_set():
+            if CANCEL_ENROLLMENT_FLAGS.get(user_id):
+                q.put("INFO: Cancelamento solicitado pelo usuário.")
+                try:
+                    # Encontra e executa o serviço 'cancelar' do esphome
+                    entities, services = await cli.list_entities_services()
+                    cancel_service = next((s for s in services if s.name == 'cancelar'), None)
+                    if cancel_service:
+                        cli.execute_service(cancel_service, {})
+                    else:
+                        q.put("AVISO: Serviço 'cancelar' não encontrado no YAML do ESPHome.")
+                except Exception as e:
+                    q.put(f"ERRO ao tentar enviar comando de cancelar: {e}")
+
+                final_status = "CANCELADO"
+                enrollment_done_event.set() # Força o término do processo principal
+                break
+            await asyncio.sleep(0.5)
 
     try:
         await cli.connect(login=True)
         q.put("INFO: Conexão bem-sucedida.")
         
+        # Inicia a tarefa que fica vigiando o pedido de cancelamento
+        cancel_checker_task = asyncio.create_task(_check_for_cancel_request())
+
         # Função de callback que será chamada pela biblioteca
         def on_state(state):
             nonlocal final_status
@@ -55,13 +83,30 @@ async def enroll_fingerprint(hostname, api_key, finger_id_on_sensor, q, user_id,
         q.put("INFO: Comando de gravação enviado. Siga as instruções no sensor.")
         cli.execute_service(gravar_service, {"finger_id": finger_id_on_sensor, "num_scans": num_scans})
         
-        await asyncio.wait_for(enrollment_done_event.wait(), timeout=60.0)
-        
+        await asyncio.wait_for(enrollment_done_event.wait(), timeout=120.0)
+   
+        cancel_checker_task.cancel()
+
         # A função agora apenas retorna o status final
         return final_status
 
     except asyncio.TimeoutError:
-        q.put("ERRO: O processo de cadastro demorou demais (timeout).")
+        q.put("INFO: O processo de cadastro demorou demais e foi encerrado (timeout).")
+        current_app.logger.error("O processo de cadastro demorou demais e foi encerrado (timeout).")
+
+        # Se deu timeout, tenta enviar o comando de cancelar para o ESP32
+        try:
+            q.put("INFO: Cancelamento solicitado.")
+            current_app.logger.warning("Timeout! Tentando cancelar o cadastro no ESP32...")
+            entities, services = await cli.list_entities_services()
+            cancel_service = next((s for s in services if s.name == 'cancelar'), None)
+            if cancel_service:
+                cli.execute_service(cancel_service, {})
+                current_app.logger.info("Comando de cancelar enviado ao ESP32 após o timeout.")
+                q.put("INFO: Cadastro cancelado.")
+        except Exception as cancel_exc:
+            current_app.logger.error(f"Falha ao tentar cancelar no ESP32 após o timeout: {cancel_exc}")
+
     except Exception as e:
         q.put(f"ERRO: {e}")
     finally:

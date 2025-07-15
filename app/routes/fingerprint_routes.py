@@ -68,7 +68,10 @@ def stream_enroll(user_id):
                     current_app.logger.error(f"ERRO CRÍTICO NA THREAD: {e}", exc_info=True)
                     q.put(f"ERRO CRÍTICO NA THREAD: {e}")
                 
-                # --- INÍCIO DA NOVA LÓGICA ---
+                # 2. Verifica se o cadastro foi cancelado pelo usuário
+                if final_status_from_sensor == "CANCELADO":
+                    q.put("INFO: Cadastro cancelado com sucesso.")
+
                 # 2. APÓS a comunicação terminar, verifica o resultado
                 if final_status_from_sensor == "SUCESSO":
                     current_app.logger.info("Salvando digital no banco de dados...")
@@ -86,6 +89,7 @@ def stream_enroll(user_id):
                     except Exception as db_exc:
                         db.session.rollback()
                         q.put(f"ERRO FATAL: Falha ao salvar no banco de dados: {db_exc}")
+
 
                 q.put(None)
 
