@@ -1,57 +1,112 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard Principal{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-primary shadow h-100 py-2">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Usuários Cadastrados</div>
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Usuários</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">{{ user_count }}</div>
                     </div>
-                    <div class="col-auto"><i class="bi bi-people-fill fs-2 text-gray-300"></i></div>
+                    <div class="col-auto"><i class="bi bi-people-fill fs-2 text-muted"></i></div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Zonas Ativas</div>
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Zonas</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">{{ zone_count }}</div>
                     </div>
-                    <div class="col-auto"><i class="bi bi-door-open-fill fs-2 text-gray-300"></i></div>
+                    <div class="col-auto"><i class="bi bi-door-open-fill fs-2 text-muted"></i></div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Grupos de Acesso</div>
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Grupos</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">{{ group_count }}</div>
                     </div>
-                    <div class="col-auto"><i class="bi bi-collection-fill fs-2 text-gray-300"></i></div>
+                    <div class="col-auto"><i class="bi bi-collection-fill fs-2 text-muted"></i></div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-warning shadow h-100 py-2">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Senhas Cadastradas</div>
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Senhas</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">{{ password_count }}</div>
                     </div>
-                    <div class="col-auto"><i class="bi bi-key-fill fs-2 text-gray-300"></i></div>
+                    <div class="col-auto"><i class="bi bi-key-fill fs-2 text-muted"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Acessos Hoje</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ accesses_today }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-calendar-check fs-2 text-muted"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Falhas Hoje</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ failures_today }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-exclamation-triangle-fill fs-2 text-muted"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Acessos no Mês</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ accesses_this_month }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-calendar3 fs-2 text-muted"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Usuário do Mês</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ most_active_user }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-person-check-fill fs-2 text-muted"></i></div>
                 </div>
             </div>
         </div>
@@ -59,46 +114,67 @@
 </div>
 
 <div class="row">
-    <div class="col-xl-5 col-lg-6">
+    <div class="col-lg-8">
         <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Panorama de Acessos</h6>
-                <div class="col-md-5">
-                    <select id="zone-filter-select" class="form-select form-select-sm">
-                        <option value="all" selected>Todas as Zonas</option>
-                        {% for zone in zones %}
-                            <option value="{{ zone.name }}">{{ zone.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Volume de Acessos (Últimos 7 Dias)</h6>
             </div>
-            <div class="card-body"><canvas id="accessChart"></canvas></div>
+            <div class="card-body">
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Top 5 Usuários Ativos (Total)</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless table-sm">
+                    <thead><tr><th>Usuário</th><th>Total de Acessos</th></tr></thead>
+                    <tbody>
+                        {% for user, count in top_5_users %}
+                            <tr><td>{{ user }}</td><td>{{ count }}</td></tr>
+                        {% else %}
+                            <tr><td colspan="2">Nenhum acesso registrado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <div class="col-xl-7 col-lg-6">
+    <div class="col-lg-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Últimas Atividades</h6>
+                <h6 class="m-0 font-weight-bold text-primary">Acessos por Zona</h6>
             </div>
             <div class="card-body">
+                <canvas id="pieChart" style="min-height: 250px;"></canvas>
+            </div>
+        </div>
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Atividades Recentes</h6>
+            </div>
+            <div class="card-body p-0">
                 <ul class="list-group list-group-flush">
                     {% for log in recent_logs %}
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                            <div class="ms-2 me-auto">
-                                <div class="fw-bold">
-                                    {% if log.type == 'biometria' %}
-                                        <i class="bi bi-fingerprint text-info"></i> {{ log.user.name if log.user else 'Desconhecido' }}
-                                    {% else %}
-                                        <i class="bi bi-shield-lock-fill text-secondary"></i> Senha: {{ log.password_submitted }}
-                                    {% endif %}
-                                </div>
-                                <small class="text-muted">{{ log.zone_name }} - {{ (log.timestamp | localtime).strftime('%d/%m %H:%M:%S') }}</small>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if log.type == 'biometria' %}
+                                    <i class="bi bi-fingerprint text-info"></i>
+                                    <span class="fw-bold">{{ log.user.name if log.user else 'Desconhecido' }}</span>
+                                    <br><small class="text-muted">{{ log.zone_name }}</small>
+                                {% else %}
+                                    <i class="bi bi-shield-lock-fill text-secondary"></i>
+                                    <span class="fw-bold">Senha: {{ log.password_submitted }}</span>
+                                    <br><small class="text-muted">{{ log.zone_name }}</small>
+                                {% endif %}
                             </div>
+
                             {% if (log.type == 'biometria' and log.result == 'Autorizado') or (log.type == 'senha' and log.result == 'Válida') %}
-                                <span class="badge bg-success rounded-pill">Sucesso</span>
+                                <span class="badge bg-success">Sucesso</span>
                             {% else %}
-                                <span class="badge bg-danger rounded-pill">Falha</span>
+                                <span class="badge bg-danger">Falha</span>
                             {% endif %}
                         </li>
                     {% else %}
@@ -113,51 +189,45 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('accessChart').getContext('2d');
-        const initialChartData = {{ access_chart_data | tojson }};
-
-        // Cria a instância do gráfico e a armazena em uma variável
-        const accessChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: initialChartData.labels,
-                datasets: [{
-                    data: initialChartData.data,
-                    backgroundColor: ['#198754', '#dc3545'],
-                    hoverBackgroundColor: ['#157347', '#bb2d3b'],
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: { /* ... suas opções de gráfico ... */ }
-        });
-
-        // --- INÍCIO DA NOVA LÓGICA ---
-
-        // Função para atualizar o gráfico com novos dados
-        async function updateChart(zoneName) {
-            try {
-                // Chama nossa nova API para buscar os dados da zona selecionada
-                const response = await fetch(`/api/chart_data?zone=${zoneName}`);
-                const newData = await response.json();
-
-                // Atualiza os dados do gráfico existente
-                accessChart.data.datasets[0].data = newData.data;
-                // Aciona a atualização da renderização do gráfico
-                accessChart.update();
-            } catch (error) {
-                console.error('Erro ao atualizar o gráfico:', error);
-            }
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de Linha
+    const lineCtx = document.getElementById('lineChart');
+    const lineData = {{ line_chart_data | tojson }};
+    new Chart(lineCtx, {
+        type: 'line',
+        data: {
+            labels: lineData.labels,
+            datasets: [{
+                label: "Acessos",
+                data: lineData.data,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            scales: { y: { beginAtZero: true } },
+            plugins: { legend: { display: false } }
         }
-
-        // Adiciona um "ouvinte" ao nosso menu de filtro
-        const zoneFilter = document.getElementById('zone-filter-select');
-        zoneFilter.addEventListener('change', function() {
-            // Quando o valor do menu muda, chama a função de atualização
-            updateChart(this.value);
-        });
-
-        // --- FIM DA NOVA LÓGICA ---
     });
+
+    // Gráfico de Pizza
+    const pieCtx = document.getElementById('pieChart');
+    const pieData = {{ pie_chart_data | tojson }};
+    new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: pieData.labels,
+            datasets: [{
+                data: pieData.data,
+                backgroundColor: ['#0d6efd', '#6c757d', '#198754', '#ffc107', '#dc3545'],
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } }
+        }
+    });
+});
 </script>
 {% endblock %}
