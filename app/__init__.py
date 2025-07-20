@@ -60,6 +60,7 @@ def create_app():
     from .routes.api_routes import api_bp
     from .routes.monitoring_routes import monitoring_bp
     from .routes.password_routes import password_bp
+    from .routes.rfid_routes import rfid_bp
 
     # Registra a tarefa para rodar a cada 60 segundos
     from . import scheduler_jobs
@@ -75,5 +76,6 @@ def create_app():
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(monitoring_bp)
     app.register_blueprint(password_bp)
-    
+    app.register_blueprint(rfid_bp)
+
     return app

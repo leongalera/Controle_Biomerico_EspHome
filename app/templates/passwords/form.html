@@ -15,6 +15,10 @@
                 {{ form.value(class="form-control") }}
             </div>
             <div class="mb-3">
+                {{ form.access_group.label(class="form-label") }}
+                {{ form.access_group(class="form-select") }}
+            </div>
+            <div class="mb-3">
                 {{ form.zones.label(class="form-label") }}
                 {{ form.zones(class="form-select", size=5) }}
                 <div class="form-text">Segure Ctrl (ou Cmd no Mac) para selecionar múltiplas zonas.</div>

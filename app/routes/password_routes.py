@@ -1,7 +1,7 @@
 # app/routes/password_routes.py
-from flask import Blueprint, render_template, redirect, url_for, flash
+from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required
-from app.models import db, Password, Zone
+from app.models import db, Password, Zone, AccessGroup
 from app.forms import PasswordForm
 
 password_bp = Blueprint('password', __name__)
@@ -20,6 +20,7 @@ def add_password():
         new_password = Password(
             description=form.description.data,
             value=form.value.data,
+            access_group_id=form.access_group.data.id,
             zones=form.zones.data # SQLAlchemy lida com a associação automaticamente
         )
         db.session.add(new_password)
@@ -33,9 +34,14 @@ def add_password():
 def edit_password(password_id):
     password = Password.query.get_or_404(password_id)
     form = PasswordForm(obj=password)
+
+    if request.method == 'GET':
+        form.access_group.data = password.group
+    
     if form.validate_on_submit():
         password.description = form.description.data
         password.value = form.value.data
+        password.access_group_id = form.access_group.data.id
         password.zones = form.zones.data # Atualiza as associações
         db.session.commit()
         flash('Senha atualizada com sucesso!', 'success')

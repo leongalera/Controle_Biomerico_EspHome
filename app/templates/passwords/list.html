@@ -7,7 +7,7 @@
 <div class="card">
     <div class="card-body">
         <table class="table table-hover">
-            <thead><tr><th>Descrição</th><th>Senha</th><th>Zonas Permitidas</th><th class="text-end">Ações</th></tr></thead>
+            <thead><tr><th>Descrição</th><th>Senha</th><th>Grupo de Acesso</th><th>Zonas Permitidas</th><th class="text-end">Ações</th></tr></thead>
             <tbody>
             {% for p in passwords %}
             <tr>
@@ -16,6 +16,13 @@
                     <span class="password-value" style="display: none;">{{ p.value }}</span>
                     <span class="password-hidden">******</span>
                     <i class="bi bi-eye-fill ms-2" style="cursor: pointer;" onclick="togglePassword(this)"></i>
+                </td>
+                <td>
+                    {% if p.group %}
+                        {{ p.group.name }}
+                    {% else %}
+                        <span class="text-muted">Nenhum</span>
+                    {% endif %}
                 </td>
                 <td>
                     {% for zone in p.zones %}

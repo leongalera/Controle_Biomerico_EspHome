@@ -64,6 +64,19 @@
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Tags RFID</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ rfid_tag_count }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-credit-card-2-front-fill fs-2 text-muted"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Acessos Hoje</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">{{ accesses_today }}</div>
                     </div>
@@ -94,19 +107,6 @@
                         <div class="h5 mb-0 font-weight-bold text-gray-800">{{ accesses_this_month }}</div>
                     </div>
                     <div class="col-auto"><i class="bi bi-calendar3 fs-2 text-muted"></i></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Usuário do Mês</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ most_active_user }}</div>
-                    </div>
-                    <div class="col-auto"><i class="bi bi-person-check-fill fs-2 text-muted"></i></div>
                 </div>
             </div>
         </div>
@@ -164,6 +164,10 @@
                                     <i class="bi bi-fingerprint text-info"></i>
                                     <span class="fw-bold">{{ log.user.name if log.user else 'Desconhecido' }}</span>
                                     <br><small class="text-muted">{{ log.zone_name }}</small>
+                                {% elif log.type == 'rfid' %}
+                                    <i class="bi bi-credit-card-2-front-fill text-success"></i>
+                                    <span class="fw-bold">{{ log.user.name if log.user else 'Tag Inválida' }}</span>
+                                    <br><small class="text-muted">{{ log.zone_name }}</small>
                                 {% else %}
                                     <i class="bi bi-shield-lock-fill text-secondary"></i>
                                     <span class="fw-bold">Senha: {{ log.password_submitted }}</span>
@@ -171,7 +175,9 @@
                                 {% endif %}
                             </div>
 
-                            {% if (log.type == 'biometria' and log.result == 'Autorizado') or (log.type == 'senha' and log.result == 'Válida') %}
+                            {% if (log.type == 'biometria' and log.result == 'Autorizado') or 
+                                (log.type == 'senha' and log.result == 'Válida') or 
+                                (log.type == 'rfid' and log.result == 'Autorizado') %}
                                 <span class="badge bg-success">Sucesso</span>
                             {% else %}
                                 <span class="badge bg-danger">Falha</span>

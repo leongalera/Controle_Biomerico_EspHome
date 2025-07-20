@@ -71,3 +71,24 @@ def update_disabled_ids_in_ha(zone, blocked_user_ids):
     except Exception as e:
         logger.error(f"HA_SERVICE: Erro inesperado ao atualizar o HA para a zona '{zone.name}': {e}", exc_info=True)
         return False
+    
+
+
+def get_ha_entity_state(entity_id):
+    """Busca o estado de uma entidade específica no Home Assistant."""
+    try:
+        ha_url = current_app.config['HA_URL']
+        ha_token = current_app.config['HA_TOKEN']
+
+        if not ha_url or not ha_token:
+            return {"success": False, "message": "URL ou Token do HA não configurados."}
+
+        url = f"{ha_url}/api/states/{entity_id}"
+        headers = {"Authorization": f"Bearer {ha_token}", "Content-Type": "application/json"}
+
+        response = requests.get(url, headers=headers, timeout=5)
+        response.raise_for_status()
+
+        return {"success": True, "data": response.json()}
+    except Exception as e:
+        return {"success": False, "message": str(e)}

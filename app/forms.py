@@ -140,6 +140,14 @@ class PasswordForm(FlaskForm):
                               validators=[DataRequired(), Length(max=150)])
     value = StringField('Senha Numérica', validators=[DataRequired(), Length(min=4, max=50)])
 
+    access_group = QuerySelectField(
+        'Grupo de Acesso',
+        query_factory=group_query, # Reutiliza a função que já temos
+        get_label='name',
+        allow_blank=False,
+        validators=[DataRequired()]
+    )
+
     # Este campo especial permite selecionar múltiplas zonas
     zones = QuerySelectMultipleField(
         'Zonas Permitidas',
@@ -157,4 +165,48 @@ class PasswordLogFilterForm(FlaskForm):
     # O campo de Zonas será populado dinamicamente na rota
     zone = SelectField('Zona', choices=[], validators=[Optional()])
 
+    submit = SubmitField('Filtrar')
+
+
+class RFIDTagForm(FlaskForm):
+    uid = StringField('UID da Tag/Cartão', 
+                      description='O identificador único lido pelo sensor RFID.', 
+                      validators=[DataRequired(), Length(max=50)])
+    description = StringField('Descrição da Tag', 
+                              description='Ex: Chaveiro João, Cartão de Acesso Limpeza.', 
+                              validators=[DataRequired(), Length(max=150)])
+
+    # Campo para associar a um usuário
+    user = QuerySelectField(
+        'Associar ao Usuário',
+        query_factory=user_query, # Reutiliza a função que já temos para listar usuários
+        get_label='name',
+        allow_blank=False,
+        validators=[DataRequired()]
+    )
+
+    # Campo para associar a uma ou mais zonas
+    zones = QuerySelectMultipleField(
+        'Zonas Permitidas',
+        query_factory=zone_query, # Reutiliza a função para listar zonas
+        get_label='name',
+        allow_blank=False
+    )
+    submit = SubmitField('Salvar Tag')
+
+class RFIDLogFilterForm(FlaskForm):
+    start_date = DateField('Data Início', format='%Y-%m-%d', validators=[Optional()])
+    end_date = DateField('Data Fim', format='%Y-%m-%d', validators=[Optional()])
+
+    user = QuerySelectField(
+        'Usuário',
+        query_factory=user_query, # Reutiliza a função que já temos
+        get_label='name',
+        allow_blank=True, # Permite a opção "Todos"
+        blank_text='-- Todos os Usuários --',
+        validators=[Optional()]
+    )
+
+    # O campo de Zonas será populado dinamicamente na rota
+    zone = SelectField('Zona', choices=[], validators=[Optional()])
     submit = SubmitField('Filtrar')

@@ -1,8 +1,8 @@
 # app/routes/monitoring_routes.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
-from app.models import db, AccessLog, Zone, User, PasswordLog
-from app.forms import LogFilterForm, PasswordLogFilterForm
+from app.models import db, AccessLog, Zone, User, PasswordLog, RFIDLog
+from app.forms import LogFilterForm, PasswordLogFilterForm, RFIDLogFilterForm
 from datetime import datetime, time
 import pytz
 
@@ -108,3 +108,74 @@ def view_password_logs():
     logs = pagination.items
 
     return render_template('monitoring/passwords_view.html', logs=logs, pagination=pagination, form=form)
+
+
+@monitoring_bp.route('/monitoring/passwords/clear', methods=['POST'])
+@login_required
+def clear_password_logs():
+    try:
+        # Apaga todos os registros da tabela PasswordLog
+        num_deleted = db.session.query(PasswordLog).delete()
+        db.session.commit()
+        flash(f'Sucesso! {num_deleted} registro(s) do histórico de senhas foram apagados.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao limpar o histórico de senhas: {e}', 'danger')
+
+    # Redireciona de volta para a página de logs de senha
+    return redirect(url_for('monitoring.view_password_logs'))
+
+
+@monitoring_bp.route('/monitoring/rfid', methods=['GET'])
+@login_required
+def view_rfid_logs():
+    # Usa o novo formulário de filtro
+    form = RFIDLogFilterForm(request.args)
+    form.zone.choices = [('', '-- Todas as Zonas --')] + [(z.name, z.name) for z in Zone.query.order_by(Zone.name).all()]
+
+    query = RFIDLog.query
+    local_tz = pytz.timezone('America/Sao_Paulo')
+
+    # Aplica os filtros, se presentes
+    if form.start_date.data:
+        local_start_dt_naive = datetime.combine(form.start_date.data, time.min)
+        local_start_dt_aware = local_tz.localize(local_start_dt_naive)
+        utc_start_dt = local_start_dt_aware.astimezone(pytz.utc)
+        query = query.filter(RFIDLog.timestamp >= utc_start_dt)
+
+    if form.end_date.data:
+        local_end_dt_naive = datetime.combine(form.end_date.data, time.max)
+        local_end_dt_aware = local_tz.localize(local_end_dt_naive)
+        utc_end_dt = local_end_dt_aware.astimezone(pytz.utc)
+        query = query.filter(RFIDLog.timestamp <= utc_end_dt)
+
+    if form.user.data:
+        query = query.filter(RFIDLog.user_id == form.user.data.id)
+
+    if form.zone.data:
+        query = query.filter(RFIDLog.zone_name == form.zone.data)
+
+    page = request.args.get('page', 1, type=int)
+
+    # Pagina os resultados com o limite de 50 por página
+    pagination = query.order_by(RFIDLog.timestamp.desc()).paginate(
+        page=page, per_page=50, error_out=False
+    )
+
+    logs = pagination.items
+
+    return render_template('monitoring/rfid_view.html', logs=logs, pagination=pagination, form=form)
+
+@monitoring_bp.route('/monitoring/rfid/clear', methods=['POST'])
+@login_required
+def clear_rfid_logs():
+    try:
+        # Apaga todos os registros da tabela RFIDLog
+        num_deleted = db.session.query(RFIDLog).delete()
+        db.session.commit()
+        flash(f'Sucesso! {num_deleted} registro(s) do histórico de RFID foram apagados.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao limpar o histórico de RFID: {e}', 'danger')
+
+    return redirect(url_for('monitoring.view_rfid_logs'))

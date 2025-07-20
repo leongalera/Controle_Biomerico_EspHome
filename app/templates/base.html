@@ -32,6 +32,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('password.list_passwords') }}">Senhas</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('rfid.list_tags') }}">Tags RFID</a>
+                </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMonitoring" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Monitoramento
@@ -39,6 +42,7 @@
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdownMonitoring">
                         <li><a class="dropdown-item" href="{{ url_for('monitoring.view_logs') }}">Acessos por Digital</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('monitoring.view_password_logs') }}">Tentativas por Senha</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('monitoring.view_rfid_logs') }}">Acessos por RFID</a></li>
                     </ul>
                 </li>
             </ul>

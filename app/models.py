@@ -87,7 +87,13 @@ class Password(db.Model):
     description = db.Column(db.String(150), nullable=False)
     value = db.Column(db.String(50), nullable=False, unique=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    # Relação com as Zonas
+
+    # Adiciona a chave estrangeira para o grupo de acesso
+    access_group_id = db.Column(db.Integer, db.ForeignKey('access_group.id'), nullable=False)
+    # Cria a relação para fácil acesso ao objeto do grupo
+    group = db.relationship('AccessGroup')
+
+    # A relação com as Zonas continua a mesma
     zones = db.relationship('Zone', secondary=password_zone_association, lazy='subquery',
                             backref=db.backref('passwords', lazy=True))
     
@@ -98,3 +104,36 @@ class PasswordLog(db.Model):
     password_submitted = db.Column(db.String(50), nullable=False)
     result = db.Column(db.String(50), nullable=False) # Ex: "Válida", "Inválida"
     notes = db.Column(db.String(100), nullable=True) # Ex: "Não permitida para esta zona"
+
+
+# Tabela de Associação para a relação Muitos-para-Muitos entre RFID e Zonas
+rfid_zone_association = db.Table('rfid_zone_association',
+    db.Column('rfid_id', db.Integer, db.ForeignKey('rfid_tag.id'), primary_key=True),
+    db.Column('zone_id', db.Integer, db.ForeignKey('zone.id'), primary_key=True)
+)
+
+class RFIDTag(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    uid = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.String(150), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relação com o Usuário (Muitas-para-Um)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref=db.backref('rfid_tags', lazy=True, cascade="all, delete-orphan"))
+
+    # Relação com as Zonas (Muitos-para-Muitos)
+    zones = db.relationship('Zone', secondary=rfid_zone_association, lazy='subquery',
+                            backref=db.backref('rfid_tags', lazy=True))
+    
+
+class RFIDLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    zone_name = db.Column(db.String(100), nullable=False)
+    uid_submitted = db.Column(db.String(50), nullable=False)
+    result = db.Column(db.String(50), nullable=False) # Ex: "Autorizado", "Inválido", "Fora de Horário"
+
+    # Opcional: Se o acesso foi autorizado, podemos registrar o usuário
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user = db.relationship('User')

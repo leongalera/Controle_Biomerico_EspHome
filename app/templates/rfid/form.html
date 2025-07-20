@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control") }}
+                <div class="form-text">{{ form.description.description }}</div>
+            </div>
+            <div class="mb-3">
+                {{ form.uid.label(class="form-label") }}
+                <div class="input-group">
+                    {{ form.uid(class="form-control", id="uid-input") }}
+                    <button class="btn btn-outline-primary" type="button" id="read-uid-btn">
+                        <i class="bi bi-reception-4"></i> Ler UID via Leitor
+                    </button>
+                </div>
+                <div class="form-text" id="uid-helper-text">{{ form.uid.description }}</div>
+            </div>
+            <div class="mb-3">
+                {{ form.user.label(class="form-label") }}
+                {{ form.user(class="form-select") }}
+            </div>
+            <div class="mb-3">
+                {{ form.zones.label(class="form-label") }}
+                {{ form.zones(class="form-select", size=5) }}
+                <div class="form-text">Segure Ctrl (ou Cmd no Mac) para selecionar múltiplas zonas.</div>
+            </div>
+            <hr>
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('rfid.list_tags') }}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const readBtn = document.getElementById('read-uid-btn');
+    const uidInput = document.getElementById('uid-input');
+    const zoneSelect = document.getElementById('zones'); // Assumindo que o ID do select de zonas é 'zones'
+    const helperText = document.getElementById('uid-helper-text');
+
+    let initialLastUpdated = null;
+    let pollingInterval = null;
+
+    function stopPolling(message) {
+        clearInterval(pollingInterval);
+        readBtn.disabled = false;
+        readBtn.innerHTML = '<i class="bi bi-reception-4"></i> Ler UID via Leitor';
+        helperText.textContent = message || 'Leitura concluída ou cancelada.';
+        helperText.classList.remove('text-primary', 'text-danger');
+    }
+
+    readBtn.addEventListener('click', async function() {
+        const selectedZoneId = zoneSelect.value;
+        if (!selectedZoneId) {
+            alert('Por favor, selecione uma ou mais zonas primeiro.');
+            return;
+        }
+        // Pega a primeira zona selecionada para a leitura
+        const zoneToRead = selectedZoneId;
+
+        readBtn.disabled = true;
+        readBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Aproxime a tag...';
+        helperText.textContent = 'Aguardando uma nova leitura de tag na zona selecionada...';
+        helperText.classList.add('text-primary');
+
+        // 1. Pega o estado inicial da tag para saber quando ela mudar
+        try {
+            const initialResponse = await fetch(`/api/zone/${zoneToRead}/get_last_rfid`);
+            const initialData = await initialResponse.json();
+            initialLastUpdated = initialData.success ? initialData.last_updated : null;
+        } catch (e) {
+            stopPolling('Falha ao obter estado inicial do leitor.');
+            return;
+        }
+
+        // 2. Começa a verificar por uma nova leitura a cada 2 segundos
+        pollingInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`/api/zone/${zoneToRead}/get_last_rfid`);
+                if (!response.ok) return;
+
+                const data = await response.json();
+                if (data.success && data.last_updated !== initialLastUpdated) {
+                    uidInput.value = data.uid;
+                    stopPolling(`UID '${data.uid}' lido com sucesso!`);
+                }
+            } catch (error) {
+                console.error('Erro no polling:', error);
+                stopPolling('Erro de comunicação durante a leitura.');
+            }
+        }, 2000);
+
+        // 3. Define um timeout para o processo de leitura
+        setTimeout(() => {
+            if (pollingInterval) {
+                stopPolling('Tempo de leitura esgotado.');
+            }
+        }, 30000); // 30 segundos
+    });
+});
+</script>
+{% endblock %}

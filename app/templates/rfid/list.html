@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Tags RFID</h1>
+    <a href="{{ url_for('rfid.add_tag') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Adicionar Nova Tag</a>
+</div>
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead><tr><th>Descrição</th><th>UID</th><th>Usuário Associado</th><th>Zonas Permitidas</th><th class="text-end">Ações</th></tr></thead>
+            <tbody>
+            {% for tag in tags %}
+            <tr>
+                <td>{{ tag.description }}</td>
+                <td><code>{{ tag.uid }}</code></td>
+                <td>{{ tag.user.name }}</td>
+                <td>
+                    {% for zone in tag.zones %}
+                    <span class="badge bg-secondary">{{ zone.name }}</span>
+                    {% endfor %}
+                </td>
+                <td class="text-end">
+                    <a href="{{ url_for('rfid.edit_tag', tag_id=tag.id) }}" class="btn btn-sm btn-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+                    <form action="{{ url_for('rfid.delete_tag', tag_id=tag.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza?');">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Excluir"><i class="bi bi-trash"></i></button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center">Nenhuma tag RFID cadastrada.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
