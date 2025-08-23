@@ -121,7 +121,7 @@ def log_inactive_access():
 @api_bp.route('/verify_password', methods=['POST'])
 def verify_password():
     data = request.json
-    password_value = data.get('password')
+    password_value = str(data.get('password', '')).strip().replace('\x00', '')
     zone_prefix = data.get('zona')
 
     if not all([password_value, zone_prefix]):
@@ -132,7 +132,7 @@ def verify_password():
     zone = Zone.query.filter_by(prefix=zone_prefix).first()
     zone_name_for_log = zone.name if zone else f"Prefixo: {zone_prefix}"
 
-    # Validação 1: A senha existe?
+     # Validação 1: A senha existe?
     if not password_entry:
         log = PasswordLog(zone_name=zone_name_for_log, password_submitted=password_value, result="Inválida")
         db.session.add(log); db.session.commit()
