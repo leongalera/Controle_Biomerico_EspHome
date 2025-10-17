@@ -17,5 +17,4 @@ requests
 bcrypt
 wtforms-sqlalchemy
 pytz
-# waitress
-gunicorn
+waitress
