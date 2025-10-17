@@ -3,6 +3,8 @@ from run import app  # Importa a variável 'app' do nosso arquivo run.py
 from waitress import serve
 import logging
 
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s %(levelname)s %(name)s %(message)s')
 
 if __name__ == "__main__":
