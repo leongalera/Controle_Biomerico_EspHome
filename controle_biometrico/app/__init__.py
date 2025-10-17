@@ -1,4 +1,5 @@
 # app/__init__.py
+import os
 from flask import Flask
 from config import Config
 from .models import db, AdminUser
@@ -51,6 +52,7 @@ def create_app():
     app.cli.add_command(commands.create_admin)
 
     # Registrar Blueprints (rotas)
+    from .routes.admin_routes import admin_bp
     from .routes.main_routes import main_bp
     from .routes.auth_routes import auth_bp
     from .routes.zone_routes import zone_bp
@@ -61,6 +63,7 @@ def create_app():
     from .routes.monitoring_routes import monitoring_bp
     from .routes.password_routes import password_bp
     from .routes.rfid_routes import rfid_bp
+
 
     # Registra a tarefa para rodar a cada 60 segundos
     from . import scheduler_jobs
@@ -77,5 +80,6 @@ def create_app():
     app.register_blueprint(monitoring_bp)
     app.register_blueprint(password_bp)
     app.register_blueprint(rfid_bp)
+    app.register_blueprint(admin_bp)
 
     return app

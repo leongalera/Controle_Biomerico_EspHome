@@ -1,6 +1,6 @@
 # serve.py
-from waitress import serve
 from run import app  # Importa a variável 'app' do nosso arquivo run.py
+from waitress import serve
 import logging
 
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s %(levelname)s %(name)s %(message)s')

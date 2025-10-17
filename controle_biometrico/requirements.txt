@@ -4,6 +4,7 @@ Flask-SQLAlchemy
 Flask-Migrate
 Flask-Login
 Flask-APScheduler
+Flask-WTF
 
 # Comunicação com ESPHome e Home Assistant
 aioesphomeapi

@@ -1,9 +1,8 @@
 # app/forms.py
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired
 from wtforms import StringField, SubmitField, TextAreaField
-from wtforms.validators import DataRequired, Length
+from wtforms.validators import DataRequired, Length, EqualTo
 from wtforms import StringField, SubmitField, BooleanField, TimeField
 from wtforms.validators import DataRequired, Length, Optional, NumberRange
 from wtforms_sqlalchemy.fields import QuerySelectField
@@ -210,3 +209,26 @@ class RFIDLogFilterForm(FlaskForm):
     # O campo de Zonas será populado dinamicamente na rota
     zone = SelectField('Zona', choices=[], validators=[Optional()])
     submit = SubmitField('Filtrar')
+
+class AdminUserForm(FlaskForm):
+    """Formulário para adicionar ou editar um usuário administrador."""
+    username = StringField('Nome de Usuário', validators=[DataRequired(), Length(min=4, max=80)])
+    password = PasswordField('Nova Senha', validators=[
+        DataRequired(),
+        EqualTo('confirm', message='As senhas devem ser iguais'),
+        Length(min=6)
+    ])
+    confirm = PasswordField('Confirmar Nova Senha')
+    submit = SubmitField('Salvar')
+
+class EditAdminUserForm(FlaskForm):
+    """Formulário específico para editar um usuário administrador existente."""
+    username = StringField('Nome de Usuário', validators=[DataRequired(), Length(min=4, max=80)])
+    current_password = PasswordField('Senha Atual', validators=[DataRequired()])
+    new_password = PasswordField('Nova Senha (deixe em branco para não alterar)', validators=[
+        Optional(),
+        EqualTo('confirm', message='As senhas devem ser iguais'),
+        Length(min=6)
+    ])
+    confirm = PasswordField('Confirmar Nova Senha')
+    submit = SubmitField('Salvar Alterações')

@@ -1,0 +1,34 @@
+# config.yaml
+name: "Controle Biométrico ESPHome"
+version: "1.0.0"
+slug: "controle_biometrico"
+description: "Gestão de usuários e digitais para sensores biométricos no ESPHome."
+url: "https://github.com/leongalera/Controle_Biomerico_EspHome"
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+init: false
+startup: application
+boot: auto
+map:
+  - data:rw
+ports:
+  '5000/tcp': 5000
+webui: "http://[HOST]:[PORT:5000]"
+options:
+  database_url: "sqlite:////data/database.db"
+  ha_url: ""
+  ha_token: ""
+  # --- ADICIONE AS DUAS LINHAS ABAIXO ---
+  initial_admin_user: "admin"
+  initial_admin_password: ""
+schema:
+  database_url: str
+  ha_url: str
+  ha_token: password
+  # --- ADICIONE AS DUAS LINHAS ABAIXO ---
+  initial_admin_user: str
+  initial_admin_password: password
