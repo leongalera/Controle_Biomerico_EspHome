@@ -49,4 +49,4 @@ python3 /app/create_initial_admin.py
 # Inicia a Aplicação Principal com Gunicorn
 # ==============================================================================
 bashio::log.info "Iniciando o servidor web com Gunicorn..."
-exec gunicorn --bind "0.0.0.0:5000" -w 4 "run:app"
+exec gunicorn --bind "0.0.0.0:5000" --workers 4 --forwarded-allow-ips="*" "run:app"
